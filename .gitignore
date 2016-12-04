@@ -1,0 +1,12 @@
+_site
+.sass-cache
+
+# node
+node_modules
+
+# sublime projects
+portfolio.sublime-project
+portfolio.sublime-workspace
+
+# Mac stuff
+.DS_Store
