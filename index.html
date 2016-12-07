@@ -15,7 +15,7 @@ title: Märt Toots blog
       <div class="postMeta-wrapper postMeta-wrapper--frontpage">
         <ul class="postMeta">
           <li class="postMeta-tagline">
-            Abaout data, R, D3 and photography
+            Data, Visualization and Photography
           </li>
         </ul>
       </div>
@@ -32,7 +32,7 @@ title: Märt Toots blog
               <article class="postArticle postArticle--short">
                 {% if post.image.feature %}
                   <a href="{{ post.url }}">
-                    <div class="postArticle-image desaturate" style="background-image:url('{{ post.image.feature | prepend: site.baseurl_featured_img }}')">
+                    <div class="postArticle-image" style="background-image:url('{{ post.image.feature | prepend: site.baseurl_featured_img }}')">
                     </div>
                   </a>
                 {% else %}
@@ -43,9 +43,9 @@ title: Märt Toots blog
                 {% endif %}
                 <a class="postArticle-title" href="{{ post.url }}">{{ post.title }}</a>
                 {% if post.excerpt %}
-                <p>
+                <a class="postArticle-excerpt" href="{{ post.url }}">
                   {{ post.excerpt }}
-                </p>
+                </a>
                 {% endif %}
               </article>
               <div class="block-postMeta">{{ post.date | date_to_string }}</div>

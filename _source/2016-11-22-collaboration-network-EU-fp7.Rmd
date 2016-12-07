@@ -1,10 +1,22 @@
 ---
 layout: post
 title: "Research funded by EU Framework Program 7"
-subtitle: Data exploration and collaboration networks
+date: 2016-11-22
+last_modified_at: `r Sys.time()`
+excerpt: "Data analysis of the research projects funded by European Union framework program number 7"
+categories: visualization
+tags:
+  - R
+  - data-analysis
+  - visualization
+image:
+  feature: 2016-11-25-Pythagoras-tree-js-feature.png
+  topPosition: -50px
+bgContrast: dark
+bgGradientOpacity: lighter
+syntaxHighlighter: yes
 ---
-<span class="image featured"><img src="{{ site.baseurl }}figure/source/2016-11-22-collaboration-network-EU-fp7/featured_image.png" alt=""></span>
-In this post I am showing how I mapped the collaboration networks between European research institutes, based on the European Union Framework Program No.7 (2007-2013) funded research projects data. The post is a bit lengthy but I the outcome looks good in my opinion.The datasets are taken from the European Union [open data portal](http://data.europa.eu/euodp/en/data) featuring thousands of freely available datasets. I chose the *framework program 7* (FP7) dataset just because it was the latest complete dataset. The next funding program Horizon 2020 lasts until, well 2020, and includes thus less data.
+In this post we are mapping the collaboration networks between European research institutes, based on the European Union Framework Program No.7 (2007-2013) funded research projects data. The post is a bit lengthy but the outcome looks good in my opinion.The datasets are taken from the European Union [open data portal](http://data.europa.eu/euodp/en/data) featuring thousands of freely available datasets. I chose the *framework program 7* (FP7) dataset just because it was the latest complete dataset. The next funding program Horizon 2020 lasts until, well 2020, and includes thus less datar.
 
 ## Let's get going
 # Load libraries
@@ -46,7 +58,7 @@ I have a couple of interesting datasets.
 
 Start by importing `countries`. The data can be scraped from a html table  [here](https://developers.google.com/public-data/docs/canonical/countries_csv) using R library `rvest`
 
-```{r}
+```{r, message=FALSE, eval=FALSE}
 library("rvest")
 
 page <- read_html("https://developers.google.com/public-data/docs/canonical/countries_csv")
@@ -60,6 +72,10 @@ countries <- page %>%
 
 #Fix Namibia, whose code NA is treated as missing value
 countries[countries$name == "Namibia", "country"] <- "NA"
+```
+
+```{r, echo=FALSE, message=FALSE}
+countries <- read_csv("../assets/posts_data/2016-11-22/countries.csv", na=character())
 ```
 
 It turns out that the country codes in fp7 dataset are European codes, so let's some of them to ISO in order to join with the `countries` dataset
@@ -82,7 +98,7 @@ Next, let's import the main dataset. A couple of notes
 * project with a reference number `rcn == 88383` had several times larger contribution that anything else, so I'm omitting it. I think it's some kind of a separate grant fund or something
 
 ```{r, message = FALSE}
-fp7org <- read_tsv("../dat/eu/fp7org_utf8_tsv.txt", 
+fp7org <- read_tsv("../assets/posts_data/2016-11-22/fp7org_utf8_tsv.txt", 
                    locale = locale(decimal_mark = ",")) %>%
   
   #Throw out unneeded variables and rename some others
@@ -216,7 +232,7 @@ for(i in 1:nrow(cities)){
 ```
 
 ```{r, echo = FALSE}
-cities <- readRDS(file = "../dat/eu/cities.rds")
+cities <- readRDS(file = "../assets/posts_data/2016-11-22/cities.rds")
 ```
 
 # Exploration
@@ -240,15 +256,15 @@ What are the top 20 participating cities?
 organizations %>% 
   count(address, sort = T) %>%
   slice(1:20) %>%
-  ggplot(aes(x = reorder(address, desc(n)), y = n)) + 
+  ggplot(aes(x = reorder(address, n), y = n)) + 
   geom_col() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  coord_flip() +
   xlab("City") + ylab("Count")
 ```
 
 Surprising that Naples is so far ahead. I scratched my head about it but then I figured it out. Not available address, or `<NA>`, is interpreted by Google Maps as Naples, Italy. So let's remove NA's and to the left join again
 
-```{r}
+```{r, dev = "svg"}
 cities <- cities %>% filter(!is.na(city_adr))
 
 organizations <- fp7org %>%
@@ -300,7 +316,7 @@ The plan is to do the following
 
 ```{r, dev="svg"}
 map("world", col="#232323", fill=TRUE, bg="#000000", 
-    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71))
+    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71), scale=10)
 ```
 
 # Add the points
@@ -340,7 +356,7 @@ make_color_scale <- function(colors = c("black", "skyblue"),
 
 Ok, now for drawing some points
 
-```{r, dev="svg"}
+```{r, dpi=300}
 #draw the map
 map("world", col="#232323", fill=TRUE, bg="#000000", 
     lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71), asp=1)
@@ -420,7 +436,7 @@ collaboration_network <- collaborators %>%
 ```
 
 ```{r, echo=FALSE}
-collaboration_network <- readRDS("../dat/eu/org_network.RDS")
+collaboration_network <- readRDS("../assets/posts_data/2016-11-22/org_network.RDS")
 ```
 
 Drawing all those lines one by one would take forever. Let's instead encode the number of projects between the same cities into line width
@@ -445,9 +461,9 @@ cnx <- collaboration_network %>%
 
 We have `r nrow(cnx)` edges left with the count ranging between `r min(cnx$n)` and `r max(cnx$n)`. Time to draw them. For drawing the great circle arcs I'm using `gcIntermediate` function from `geosphere` package. I'm also defining new scaling function for line colors and line width
 
-```{r, dev="svg"}
+```{r, dpi=300}
 map("world", col="#232323", fill=TRUE, bg="#000000", 
-    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71), asp=1)
+    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71))
 
 #Connection line color scaler
 cnx_color_scale = make_color_scale(c("deepskyblue"), 
@@ -493,16 +509,3 @@ And there we have it.
 At some point I will try to generate the same image by using `ggplot` and `ggmap` etc in order to stay true to the `gg` way of the world. 
 
 The problem so far has been that drawing this partial map of Europe. The country borders are polygons and if Russia for example in its vastness is not entirely in the limits of the plot the whole polygon will be dropped. I would have to cut it with a rectangle representing the plot edges.
-
-```{r}
-write_csv(city_contributions %>% mutate(city_contribution = parse_character(city_contribution)), "~/Code/blog/portfolio/posts_data/2016-11-26/city_contributions.csv")
-
-city_contributions %>% 
-  filter(lat == 51.5073509)
-
-city_contributions %>% filter(is.na(city_contribution))
-
-lon
-:
--0.1277583
-```

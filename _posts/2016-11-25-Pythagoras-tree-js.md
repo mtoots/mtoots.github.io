@@ -1,13 +1,13 @@
 ---
 layout: post
-title: "Pythagorean tree with D3"
+title: "Pythagorean Broccoli with D3"
 date:   2016-11-22 23:06:00
 last_modified_at:  2016-11-22 23:06:00
 excerpt: "D3 rendering of randomized Pythagorean tree fractal, constantly morphing into new shapes"
 categories: visualization
 tags:  D3, fractal, visualization
 image:
-  feature: ../../figure/posts/2016-11-25-Pythagoras-tree-js/featured_image.png
+  feature: 2016-11-25-Pythagoras-tree-js-feature.png
   topPosition: -50px
 bgContrast: dark
 bgGradientOpacity: lighter
@@ -19,7 +19,9 @@ The transitions in D3 are just so amazing that I had to convert my code to javas
 
 Note to self: Maybe looks better if the trunk were fixed to the ground. Now it's sliding around a little. Now it's scaled to always fit into 512x512 box and keep the aspect ratio
 
-<svg width="512" height = "512"></svg>
+<div align="center">
+  <svg width="512" height = "512"></svg>
+</div>
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.4.0/d3.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.5.3/jstat.min.js"></script>

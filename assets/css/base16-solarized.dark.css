@@ -8,7 +8,11 @@
 
 */
 .highlight .hll { background-color: #586e75 }
-.highlight  { background: #002b36; color: #fdf6e3 }
+.highlight  { 
+	background: #002b36; 
+	color: #fdf6e3; 
+	margin: 1em 0px;
+}
 .highlight .c { color: #657b83 } /* Comment */
 .highlight .err { color: #dc322f } /* Error */
 .highlight .k { color: #6c71c4 } /* Keyword */
@@ -72,3 +76,18 @@
 .highlight .vg { color: #dc322f } /* Name.Variable.Global */
 .highlight .vi { color: #dc322f } /* Name.Variable.Instance */
 .highlight .il { color: #cb4b16 } /* Literal.Number.Integer.Long */
+
+/*.highlight .language-text {
+	background: #555555;
+}
+*/
+.highlight pre code {
+  font: 13px Menlo, Monaco, Consolas, "Courier New", monospace;
+  display: block;
+  white-space: pre;
+  overflow-x: auto;
+  word-wrap: normal;
+  /*margin-bottom: 1em;*/
+  /*border: 1px solid;*/
+  /*border-color: #cccccc;*/
+}

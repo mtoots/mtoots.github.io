@@ -1,20 +1,22 @@
 ---
 layout: post
 title: "Research funded by EU Framework Program 7"
-date:   2016-11-22 23:06:00
-last_modified_at:  2016-11-22 23:06:00
-excerpt: "Kaka noku pepu tussu"
-categories: data-analysis
-tags:  R, data, networks
+date: 2016-11-22
+last_modified_at: 2016-12-06 11:26:41
+excerpt: "Data analysis of the research projects funded by European Union framework program number 7"
+categories: visualization
+tags:
+  - R
+  - data-analysis
+  - visualization
 image:
-  feature: ../../figure/source/2016-11-22-collaboration-network-EU-fp7/featured_image.png
+  feature: 2016-11-25-Pythagoras-tree-js-feature.png
   topPosition: -50px
 bgContrast: dark
 bgGradientOpacity: lighter
 syntaxHighlighter: yes
 ---
-
-In this post I am showing how I mapped the collaboration networks between European research institutes, based on the European Union Framework Program No.7 (2007-2013) funded research projects data. The post is a bit lengthy but I the outcome looks good in my opinion.The datasets are taken from the European Union [open data portal](http://data.europa.eu/euodp/en/data) featuring thousands of freely available datasets. I chose the *framework program 7* (FP7) dataset just because it was the latest complete dataset. The next funding program Horizon 2020 lasts until, well 2020, and includes thus less data.
+In this post we are mapping the collaboration networks between European research institutes, based on the European Union Framework Program No.7 (2007-2013) funded research projects data. The post is a bit lengthy but the outcome looks good in my opinion.The datasets are taken from the European Union [open data portal](http://data.europa.eu/euodp/en/data) featuring thousands of freely available datasets. I chose the *framework program 7* (FP7) dataset just because it was the latest complete dataset. The next funding program Horizon 2020 lasts until, well 2020, and includes thus less datar.
 
 ## Let's get going
 # Load libraries
@@ -74,6 +76,8 @@ countries <- page %>%
 countries[countries$name == "Namibia", "country"] <- "NA"
 {% endhighlight %}
 
+
+
 It turns out that the country codes in fp7 dataset are European codes, so let's some of them to ISO in order to join with the `countries` dataset
 
 
@@ -96,7 +100,7 @@ Next, let's import the main dataset. A couple of notes
 
 
 {% highlight r %}
-fp7org <- read_tsv("../dat/eu/fp7org_utf8_tsv.txt", 
+fp7org <- read_tsv("../assets/posts_data/2016-11-22/fp7org_utf8_tsv.txt", 
                    locale = locale(decimal_mark = ",")) %>%
   
   #Throw out unneeded variables and rename some others
@@ -272,15 +276,13 @@ What are the top 20 participating cities?
 organizations %>% 
   count(address, sort = T) %>%
   slice(1:20) %>%
-  ggplot(aes(x = reorder(address, desc(n)), y = n)) + 
+  ggplot(aes(x = reorder(address, n), y = n)) + 
   geom_col() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  coord_flip() +
   xlab("City") + ylab("Count")
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-12](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-12-1.svg)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-13-1.svg);"></div>
 
 Surprising that Naples is so far ahead. I scratched my head about it but then I figured it out. Not available address, or `<NA>`, is interpreted by Google Maps as Naples, Italy. So let's remove NA's and to the left join again
 
@@ -304,9 +306,7 @@ organizations %>%
   coord_flip()
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-13](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-13-1.png)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-14-1.svg);"></div>
 
 Napels has disappeared and Paris, London, Munich have taken the lead, which makes way more sense.
 
@@ -330,9 +330,7 @@ city_contributions %>%
   ylab("Contribution") + xlab("City")
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-14](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-14-1.svg)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-15-1.svg);"></div>
 
 ## Mapping the data
 
@@ -350,9 +348,7 @@ map("world", col="#232323", fill=TRUE, bg="#000000",
     lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71))
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-15](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-15-1.svg)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-16-1.svg);"></div>
 
 # Add the points
 
@@ -405,7 +401,7 @@ point_color_scale <- make_color_scale(colors = c("white", "gold"),
 
 #Create point size scaler
 cex_scale <- scl(range(city_contributions$city_contribution), 
-                 c(0.1, 2), 
+                 c(0.1, 3), 
                  trans=sqrt)
 
 #Draw the points
@@ -415,9 +411,7 @@ city_contributions %$%
          cex = cex_scale(city_contribution))
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-18](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-18-1.svg)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-19-1.png);"></div>
 
 # Add collaboration network
 
@@ -514,7 +508,7 @@ We have 1025 edges left with the count ranging between 50 and 836. Time to draw 
 
 {% highlight r %}
 map("world", col="#232323", fill=TRUE, bg="#000000", 
-    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71), asp=1)
+    lwd=0.05, xlim = c(-15, +45), ylim = c(35, 71))
 
 #Connection line color scaler
 cnx_color_scale = make_color_scale(c("deepskyblue"), 
@@ -544,7 +538,7 @@ point_color_scale <- make_color_scale(colors = c("white", "gold"),
 
 #Point size scaler
 cex_scale <- scl(range(city_contributions$city_contribution), 
-                 c(0.2, 2), 
+                 c(0.2, 3), 
                  trans=sqrt)
 
 city_contributions %$%
@@ -553,9 +547,7 @@ city_contributions %$%
          cex=cex_scale(city_contribution))
 {% endhighlight %}
 
-<span class = "image featured">
-![plot of chunk unnamed-chunk-26](/assets/figure/source/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-26-1.svg)
-</span>
+<div class="img img--fullContainer img--20xLeading" style="background-image: url(/assets/images/posts/2016-11-22-collaboration-network-EU-fp7/unnamed-chunk-27-1.png);"></div>
 
 And there we have it.
 
