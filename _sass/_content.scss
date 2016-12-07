@@ -87,7 +87,8 @@
       }
     }
 
-    .postArticle-title {
+    .postArticle-title,
+    .postArticle-excerpt {
       font-size: $font-S;
     }
   }
@@ -100,7 +101,8 @@
       padding-top: 50%;
     }
 
-    .postArticle-title {
+    .postArticle-title,
+    .postArticle-excerpt {
       font-size: $font-S;
     }
 
@@ -111,7 +113,8 @@
 
   li {
 
-    .postArticle-title {
+    .postArticle-title,
+    .postArticle-excerpt {
       font-size: $font-XS;
       line-height: 1.5;
     }
@@ -136,6 +139,12 @@
   }
 
   .postArticle-title {
+    display: block;
+    margin-top: 0.5*$leading;
+    font-weight: 700;
+  }
+
+  .postArticle-excerpt {
     display: block;
     margin-top: 0.5*$leading;
     font-weight: 300;
@@ -180,6 +189,7 @@
   }
 
   .postArticle-title,
+  .postArticle-excerpt,
   .block-postMeta {
     padding-left: 15px;
     padding-right: 15px;
