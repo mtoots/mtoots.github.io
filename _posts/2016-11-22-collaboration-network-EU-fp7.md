@@ -10,7 +10,7 @@ tags:
   - data-analysis
   - visualization
 image:
-  feature: 2016-11-25-Pythagoras-tree-js-feature.png
+  feature: 2016-11-22-collaboration-network-EU-fp7-featured.png
   topPosition: -50px
 bgContrast: dark
 bgGradientOpacity: lighter

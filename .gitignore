@@ -11,3 +11,7 @@ portfolio.sublime-workspace
 # Mac stuff
 .DS_Store
 .Rproj.user
+
+# Some large files that can be accessed elsewhere
+fp7.csv
+fp7org_utf8_tsv.txt

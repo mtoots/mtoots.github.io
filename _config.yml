@@ -30,10 +30,10 @@ sass:
 author:
   name:           	 Märt Toots
   url:            	 your site url
-  facebook:          username
-  twitter:           username
+  facebook:          martooc
+  twitter:           martooc
   google_plus:       username
-  linkedin:          username
+  linkedin:          martooc
   dribbble:          username
   pinterest:         username
   kiva:              username
@@ -63,7 +63,7 @@ exclude:
   - "_source"
   - "_drafts"
 
-port:             	 9001
+port: 9001
 
 defaults:
   -
