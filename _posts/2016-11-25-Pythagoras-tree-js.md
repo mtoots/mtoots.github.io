@@ -13,11 +13,16 @@ bgContrast: dark
 bgGradientOpacity: lighter
 syntaxHighlighter: yes
 ---
-I have found Pythagorean trees curious ever since I saw a picture of a symmetric regular tree framed on my maths class wall in high school. It seemed like a nice small challenge to write a code that can generate one. I initially did it in R and started from a symmetric case with equal branches at each bifuraction. Then I realized that I can make the tree look more interesting if I add a bias to either side. But the ones that most resemble a real tree are the ones that branch off randomly at each node. 
+I have found Pythagorean trees curious ever since I saw a picture of a symmetric regular tree framed on my maths class wall in high school. 
+It seemed like a nice small challenge to write a code that can generate one. 
+I initially did it in R and started from a symmetric case with equal branches at each bifuraction. 
+Then I realized that I can make the tree look more interesting if I add a bias to either side. 
+But the ones that most resemble a real tree are the ones that branch off randomly at each node. 
 
 The transitions in D3 are just so amazing that I had to convert my code to javascript and make the tree morph into yet another random shape at a set interval.
 
-Note to self: Maybe looks better if the trunk were fixed to the ground. Now it's sliding around a little. Now it's scaled to always fit into 512x512 box and keep the aspect ratio
+Note to self: Maybe looks better if the trunk were fixed to the ground. 
+Now it's sliding around a little because the tree is scaled to always fit into 512x512 box and keep the aspect ratio.
 
 <div align="center">
   <svg width="512" height = "512"></svg>
@@ -270,30 +275,13 @@ function setEmAll(polygons){
       
     })
     .style("fill", "green")
-    .style("opacity", 0.5);
-    // .style("stroke", "black")
-    // .style("stroke-width", 1)
-    
+    .style("opacity", 0.5);    
 }
 
 
-  // var p       = document.getElementById("pRange").value / 100.0;
-  // var k       = document.getElementById("kRange").value * 10;
-  // var nlevels = document.getElementById("nlevels").value;
-  // console.log(p);
-
-// function run(){
-  // if(isRunning){
-  //  document.getElementById("btn").value = "Run";
-  // }else{
-  //  document.getElementById("btn").value = "Stop";
-    var p = 0.5;
-    var k = 50;
-    var nlevels = 10;
-    setInterval(redraw, 1500);
-  // }
-  // isRunning = !isRunning
-// }
+var p = 0.5;
+var k = 50;
+var nlevels = 10;
+setInterval(redraw, 1500);
   
-var isRunning = false;
 {% endhighlight %}

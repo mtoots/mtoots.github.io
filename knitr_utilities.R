@@ -23,4 +23,5 @@ fix_md_imagetag <- function(post_name){
 }
 
 post_name <- "2016-11-22-collaboration-network-EU-fp7.md"
+post_name <- "2016-12-14-3D-density-visualisation.md"
 fix_md_imagetag(post_name)

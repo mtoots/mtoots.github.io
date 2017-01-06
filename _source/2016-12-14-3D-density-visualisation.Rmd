@@ -1,0 +1,263 @@
+---
+layout: post
+title: "3D density visualization"
+author: "Märt Toots"
+date: "14 December 2016"
+output: html_document
+syntaxHighlighter: yes
+# date: "2016-12-14"
+# last_modified_at: `r Sys.time()`
+# excerpt: "Using R to visualize 3D density sampled at a rotated and sheared grid "
+# categories: visualization
+# tags:
+#   - R
+#   - crystal
+#   - structural-biology
+#   - electron-microscopy
+#   - electron-tomography
+#   - visualization
+# image:
+#   feature: 2016-12-14-3d-density-visualization.png
+#   topPosition: -50px
+# bgContrast: dark
+# bgGradientOpacity: lighter
+---
+
+## Problem description
+
+```{r, message=FALSE, error=FALSE}
+library(misc3d) #3d contouring
+library(stringr) #string manipulations
+library(oce) #3d trilinear interpolation from regular grid
+library(plotly) #Interactive graphics
+library(rgl) #3d graphics
+```
+
+```{r, echo = FALSE, message=FALSE}
+library(knitr)
+library(tidyverse) #data manipulations
+source("~/Dropbox/R/funlib.R")
+source("~/Dropbox/R/function_libs/funlib.R")
+
+knit_hooks$set(webgl = hook_webgl)
+
+```
+
+Today I spent quite some time to figure out ways how to best visualize my 3D data with R. The scenario is the following:
+
+- I have a 3D volume containing the electron density of a protein crystal, obtained by means of electron tomography
+- The volume can be divided into unit cells that are general parallelepipeds rotated in an arbitrary orientation, but otherwise on a regular grid
+- The correlation coefficient between each unit cell and the average of all of the unit cells is mapped to the center of each cell
+- More highly correlating points roughly draw out the shape of the crystal, like so
+
+```{r, webgl = TRUE, message=FALSE}
+library(rgl) #3d graphics
+
+#load some data}
+df <- read_table("../assets/posts_data/2016-12-14/correlations3_chi1.4_def-3.0_famp0.08.lst", 
+                   col_names=c("x", "y", "z", "cor"))
+
+#Use only highly correlating points
+cor_threshold <- 0.05
+pts <- df %>% filter(cor > cor_threshold) %>% select(-cor) %>% as.matrix
+cors <- df %>% filter(cor > cor_threshold) %>% select(cor) %>% as.matrix
+map_color <- make_color_scale()
+
+points3d(pts, color = map_color(cors), size = 5)
+box3d()
+```
+
+Each point in there has a density value associated, currently mapped to color via `map_color()` function. In principle there is a nice structure hidden in there. I would like to demonstrate it clearly that highly ordered sections are in clusters, not randomly scattered around. But how to best visualise it?
+
+## Crystallographic basis
+
+As I happen to know the crystallographic basis vectors, i.e. the triplet of 3D vectors that describe this given lattice, I can use those vectors, to transform each point to an integer coordinate. This is convenient because I can then place the data in a regular array and use contouring or do some easy slicing. Like so
+
+```{r}
+#Read the 3 column vectors as a 3x3 matrix
+(A <- as.matrix(read.table("../assets/posts_data/2016-12-14/realfitvectors_lat_new.lst", nrows = 3)))
+
+#Look at the coordinates of the first 3 points
+head(pts, n = 3)
+
+#Change of basis to crystallographic coordinates
+xstal_pts <- pts %*% t(solve(A)) %>% round 
+head(xstal_pts, n = 3)
+```
+
+Some coordinates are negative, as expected, but they are all integers and fill a whole grid. Let's shift the new coordinates to the positive side, use them as indices in an array and plug the correlation values in
+
+```{r, webgl = TRUE, message = FALSE}
+#Shift the indices so they start from 1
+ind <- apply(xstal_pts, 2, function(x) x - min(x) + 1)
+
+#Make sure the indices run from 1 and are all on the positive side
+apply(ind, 2, range)
+
+#Make the background value of the array equal to the minimum of correlations. 
+#That is for scaling reasons later when we try to image it
+C <- array(min(cors), dim = apply(ind, 2, max))
+C[ind] <- cors
+
+#visualize
+open3d() #open new device
+contour3d(C, level = 0.07, alpha = 0.1) #translucent shape of the crystal
+contour3d(C, level = 0.12, color = "dodgerblue", add = T) #higher correlating clusters
+aspect3d(1,1,1) 
+```
+
+This looks pretty good, but has some obvious problems:
+
+- Because of the crystallographic coordinates, the physical shape of the crystal and the clusters is sheared. I would like to see (and show) the actual shape - the shape that the crystal has in the real world
+- It's a coarse sampling, and the 3D contouring is not very smooth. It would be nicer to have some subdivision action going on. Or at least some interpolation action.
+
+In the following we try to fix some of those
+
+But first let's try to make some 2D images as well. We can either slice through the array, or sum along one axis. If you have any other good ideas, please share
+
+```{r}
+dim(C)
+
+p <- par(mfrow = c(1,2))
+#slices through the center
+IMG(C[13,,], asp=1)
+#And sums along axis
+IMG(apply(C, c(2,3), sum), asp=1)
+
+IMG(C[,13,], asp=1)
+IMG(apply(C, c(1,3), sum), asp=1)
+
+IMG(C[,,22], asp=1)
+IMG(apply(C, c(1,2), sum), asp=1)
+par(p)
+
+```
+
+Looks pretty cool, but some issues are
+
+- The slices are good, but they visualize just one slice. It would be nice to get some information about the surroundings
+- The sums have all the interesting information blurred out too much. The variation in the crystal get averaged over, and the center part of the crystal looks whiter already by the virtue of the crystal being thicker at the center 
+
+## Project points on a plane
+
+To try to avoid shearing the shape of the crystal we have to go back to the original coordinate system
+
+The next idea was to project the original points on a suitably chosen plane. Let's write a function that does this bit of linear algebra. Also it should be vectorised.
+
+```{r}
+project_to_plane <- function(p, w, d){
+  #p - point to be projected, or n by 3 matrix
+  #w - normal vector defining the plane
+  #d - a point on the plane
+  
+  #make sure the dimensions are correct
+  if(is.null(dim(p))){
+    p <- rbind(p)
+  }
+  
+  #displacement vectors
+  v <- t(t(p) - d)
+  
+  v_par <- outer(as.vector(v %*% w), w) / sum(w^2)
+  v_cross <- v - v_par
+  
+  t(d + t(v_cross))
+}
+
+```
+
+So `project_to_plane()` does the projecting from 3D to a 3D plane. Let's try it out. Let's project the points in the direction of the third crystallographic vector
+
+```{r, webgl = FALSE, message = FALSE}
+pts_plane <- project_to_plane(pts, A[,3], colMeans(pts))
+open3d()
+points3d(pts)
+points3d(pts_plane, col="red", size=10)
+```
+
+The problem remaining is that the still have 3D coordinates. For creating an image that retains the proper shape of the crystal, we'd need to get the 2D coordinates on the specified plane. How to do that?
+
+The normal to the plane is `A[,3]`. Let's normalize it and call it z
+```{r}
+z <- A[,3]/sqrt(sum(A[,3]^2))
+```
+
+Next I need two unit vectors `x` and `y` on the plane that are orthogonal to each, and finally project each point
+onto those two vectors.
+
+```{r}
+plot(pts_plane[,1:2], asp=1, col="#00000010", pch=20)
+```
+
+
+## 3D Interpolation
+
+Third idea that popped into my mind was to interpolate the original points onto a regular Cartesian grid so it could be plugged into an array not unlike to the first approach, and subsequently contoured, sliced or summed along an axis. This way the true shape of the crystal would stay visible
+
+Since I didn't feel like implementing my own 3D interpolation scheme I set out to find a library that does that. 
+
+Unfortunately I couldn't find an existing library that would support 3D points on an irregular grid as an input. The only implementation of 3D interpolation I could find was in a library `oce` a function `approx3d()`. This function needs regular grid of points as an input and can interpolate anything in between. So my strategy became to first transform my points to crystallographic basis, where they are on a regular grid, do the interpolation there, and transform back. This is how it's done:
+
+```{r, webgl=TRUE, message=FALSE}
+#Function for mapping one interval onto another
+scl <- function(i1, i2 = 0:1, trans = I, ...){
+  function(x) trans((x - i1[1]) / diff(i1), ...) * diff(i2) + i2[1]
+}
+
+#X will be my correlation function on a regular grid
+# the dimensions should be proportional to the existing dimensions
+
+#let's pick the x-dimension 128, and others in proportion to this
+nx <- 128
+ny <- round(diff(range(pts[,2]))/diff(range(pts[,1])) * nx)
+nz <- round(diff(range(pts[,3]))/diff(range(pts[,1])) * nx)
+X <- array(0, c(nx, ny, nz))
+
+#Create a grid of coordinates for X. That's 128x128x100 by 3 matrix
+grid_X <- as.matrix(
+  expand.grid(
+    seq_len(dim(X)[1]),
+    seq_len(dim(X)[2]),
+    seq_len(dim(X)[3])
+  )
+)
+
+#Need to scale the new grid to the ranges covered by the existing points
+grid_pts <- cbind(
+  scl(range(grid_X[,1]), range(pts[,1]))(grid_X[,1]),
+  scl(range(grid_X[,2]), range(pts[,2]))(grid_X[,2]),
+  scl(range(grid_X[,3]), range(pts[,3]))(grid_X[,3])
+)
+
+#Transform the points to crystallographic basis. 
+#We want the correlation function at these points
+grid_xstal <- grid_pts %*% t(solve(A))
+
+#We can use the regular grid in crystallographic coordinates from abve.
+
+#Let's make sure the numebr we want to interpolate on are roughly between 
+#the existing grid
+apply(xstal_pts, 2, range)
+apply(grid_xstal, 2, range)
+
+#Looks good. Now let's interpolate, using oce::approx3d
+C_interp <- approx3d(min(xstal_pts[,1]):max(xstal_pts[,1]),
+                     min(xstal_pts[,2]):max(xstal_pts[,2]),
+                     min(xstal_pts[,3]):max(xstal_pts[,3]),
+                     C, grid_xstal[,1], grid_xstal[,2], grid_xstal[,3])
+
+#And plug the interpolated values at the original positions where we wanted 
+#to interpolate. I wonder if I'm introducing any errors this way??
+X[grid_X] <- C_interp
+
+#Not everywhere is covered 
+sum(is.na(X))
+
+#Let's replace NA's with the minimum of non NA-s 
+X[is.na(X)] <- min(X[!is.na(X)])
+
+#visualize
+open3d() #open new device
+contour3d(X, level = 0.07, alpha = 0.1) #translucent shape of the crystal
+contour3d(X, level = 0.13, alpha = 1, color = "dodgerblue", add = T) #higher correlating clusters
+```
